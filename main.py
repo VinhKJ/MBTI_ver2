@@ -99,10 +99,6 @@ class Token(BaseModel):
     token_type: str
 
 
-class TokenData(BaseModel):
-    email: Optional[str] = None
-
-
 class AnswerPSI(BaseModel):
     item: int
     value: int  # 0–5 where a = 5−v, b = v
@@ -125,11 +121,16 @@ class ResultOut(BaseModel):
         orm_mode = True
 
 
+class ScoreRequest(BaseModel):
+    answers: List[Dict[str, Any]]
+    save: bool = False
+
+
 # -----------------------------------------------------------------------------
 # Utility functions
 # -----------------------------------------------------------------------------
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
 
 
 def get_db():
@@ -166,24 +167,46 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     return None
 
 
-async def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+async def _resolve_user_from_token(db: Session, token: str) -> User:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-        token_data = TokenData(email=email)
+        email: Optional[str] = payload.get("sub")
     except JWTError:
-        raise credentials_exception
-    user = get_user_by_email(db, token_data.email)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if email is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = get_user_by_email(db, email)
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
+
+
+async def get_current_user(db: Session = Depends(get_db), token: Optional[str] = Depends(oauth2_scheme)) -> User:
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return await _resolve_user_from_token(db, token)
+
+
+async def get_optional_user(db: Session = Depends(get_db), token: Optional[str] = Depends(oauth2_scheme)) -> Optional[User]:
+    if not token:
+        return None
+    return await _resolve_user_from_token(db, token)
 
 
 # -----------------------------------------------------------------------------
@@ -486,7 +509,12 @@ def get_questions(test: str):
 
 
 @app.post("/api/score")
-def score_test(test: str, save: bool = False, current_user: Optional[User] = Depends(get_current_user), db: Session = Depends(get_db), answers: List[Dict[str, Any]] = []):
+def score_test(
+    test: str,
+    payload: ScoreRequest,
+    current_user: Optional[User] = Depends(get_optional_user),
+    db: Session = Depends(get_db),
+):
     """Score a test. Provide answers list according to test type.
 
     For PSI‑32: answers = [{"item": i, "value": v}, ...] where v is 0–5.
@@ -495,6 +523,7 @@ def score_test(test: str, save: bool = False, current_user: Optional[User] = Dep
     If save=True and user is authenticated, result is persisted and returned with id; otherwise id is omitted.
     """
     t = test.lower()
+    answers = payload.answers
     if t == "psi32":
         parsed = [AnswerPSI(**ans) for ans in answers]
         result = score_psi32(parsed)
@@ -507,7 +536,7 @@ def score_test(test: str, save: bool = False, current_user: Optional[User] = Dep
         raise HTTPException(status_code=400, detail="Invalid test code")
 
     # Persist result if requested and user authenticated
-    if save:
+    if payload.save:
         if current_user is None:
             raise HTTPException(status_code=401, detail="Authentication required to save result")
         tr = TestResult(
