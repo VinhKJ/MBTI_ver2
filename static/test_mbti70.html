@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MBTI-70 Test</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <nav>
+    <div><a href="/static/index.html" class="brand">URP</a></div>
+    <div>
+      <a href="/static/dashboard.html" data-i18n="start_test"></a>
+      <span class="language-toggle" onclick="toggleLang()" data-i18n="language"></span>
+    </div>
+  </nav>
+  <main class="container">
+    <div class="card">
+      <h2>MBTI-70</h2>
+      <p data-i18n="instructions_mbti"></p>
+      <div id="questions"></div>
+      <div style="margin-top:1rem;">
+        <button id="submit-btn" class="btn" data-i18n="submit"></button>
+        <button id="save-btn" class="btn" style="margin-left:0.5rem; display:none;" data-i18n="save_result"></button>
+      </div>
+      <div id="result-box" class="result-box" style="display:none;"></div>
+    </div>
+  </main>
+  <script src="/static/js/app.js"></script>
+  <script>
+    async function loadQuestions() {
+      try {
+        const data = await fetch('/api/questions?test=mbti70').then(res => res.json());
+        const container = document.getElementById('questions');
+        data.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'radio-group';
+          div.innerHTML = `
+            <div class="label">${item.item}. ${item.a.split(':')[0]}</div>
+            <label><input type="radio" name="q${item.item}" value="A"> A: ${item.a.replace(item.a.split(':')[0] + ':','').trim()}</label>
+            <label><input type="radio" name="q${item.item}" value="B"> B: ${item.b.replace(item.b.split(':')[0] + ':','').trim()}</label>
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    async function compute(save=false) {
+      const answers = [];
+      const total = document.querySelectorAll('.radio-group').length;
+      for (let i = 1; i <= total; i++) {
+        const sel = document.querySelector(`input[name='q${i}']:checked`);
+        if (!sel) {
+          alert(t('unanswered_error'));
+          return;
+        }
+        answers.push({ item: i, choice: sel.value });
+      }
+      try {
+        const result = await api(`/score?test=mbti70&save=${save}`, {
+          method: 'POST',
+          body: answers
+        });
+        displayResult(result);
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+    function displayResult(result) {
+      const box = document.getElementById('result-box');
+      box.style.display = 'block';
+      let html = `<h3>${t('result')}: <span style="font-size:2rem">${result.letters || result.type4}</span></h3>`;
+      if (result.scores) {
+        html += `<h4>${t('scores')}</h4>`;
+        html += '<table class="score-table"><thead><tr><th>Dimension</th><th>Scores</th></tr></thead><tbody>';
+        const pairs = {IE:['I','E'], NS:['N','S'], TF:['T','F'], PJ:['P','J']};
+        for (const [pair, letters] of Object.entries(pairs)) {
+          const first = letters[0];
+          const second = letters[1];
+          const fVal = result.scores[first];
+          const sVal = result.scores[second];
+          html += `<tr><td>${first}/${second}</td><td>${fVal} - ${sVal}</td></tr>`;
+        }
+        html += '</tbody></table>';
+      }
+      if (result.margins) {
+        html += `<h4>${t('margins')}</h4>`;
+        html += '<ul>';
+        for (const [pair, value] of Object.entries(result.margins)) {
+          html += `<li>${pair}: ${value}</li>`;
+        }
+        html += '</ul>';
+      }
+      box.innerHTML = html;
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      loadQuestions().then(() => { translatePage(); });
+      if (localStorage.getItem('token')) {
+        document.getElementById('save-btn').style.display = 'inline-block';
+      }
+      document.getElementById('submit-btn').addEventListener('click', () => compute(false));
+      document.getElementById('save-btn').addEventListener('click', () => compute(true));
+    });
+  </script>
+</body>
+</html>

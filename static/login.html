@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="login">Login</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <nav>
+    <div><a href="/static/index.html" class="brand">URP</a></div>
+    <div>
+      <a href="/static/register.html" data-i18n="register">Register</a>
+      <span class="language-toggle" onclick="toggleLang()" data-i18n="language">EN/VI</span>
+    </div>
+  </nav>
+  <main class="container">
+    <div class="card">
+      <h2 data-i18n="login"></h2>
+      <div id="alert" class="alert" style="display:none;"></div>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email" data-i18n="email">Email</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password" data-i18n="password">Password</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+          <input type="submit" id="login-btn" class="btn" value="Login" data-i18n="login">
+        </div>
+      </form>
+    </div>
+  </main>
+  <script src="/static/js/app.js"></script>
+  <script>
+    setLang();
+
+    const form = document.getElementById('login-form');
+    const alertEl = document.getElementById('alert');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertEl.style.display = 'none';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      // PHẢI gửi dạng form-urlencoded và key = username
+      const body = new URLSearchParams();
+      body.append('username', email);
+      body.append('password', password);
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString()
+        });
+
+        if (!res.ok) throw new Error('login failed');
+
+        const data = await res.json();
+        localStorage.setItem('token', data.access_token);
+        window.location.href = '/static/dashboard.html';
+      } catch (err) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = t('login_error');
+        alertEl.style.display = 'block';
+      }
+    });
+  </script>
+
+</body>
+</html>

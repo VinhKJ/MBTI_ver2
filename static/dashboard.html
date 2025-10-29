@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="welcome">Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <nav>
+    <div><a href="/static/index.html" class="brand">URP</a></div>
+    <div>
+      <span id="welcome" class="muted"></span>
+      <a href="#" id="logout-link" data-i18n="logout"></a>
+      <span class="language-toggle" onclick="toggleLang()" data-i18n="language"></span>
+    </div>
+  </nav>
+  <main class="container">
+    <div class="card">
+      <h2 data-i18n="select_test"></h2>
+      <div style="margin-bottom:1rem;">
+        <a href="/static/test_psi32.html" class="btn" data-i18n="psi32"></a>
+        <a href="/static/test_mbti70.html" class="btn" style="margin-left:1rem;" data-i18n="mbti70"></a>
+      </div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="test_history"></h2>
+      <div id="results-container"></div>
+    </div>
+  </main>
+  <script src="/static/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      requireAuth();
+      // fetch user info
+      try {
+        const user = await api('/me');
+        document.getElementById('welcome').textContent = t('welcome') + ' ' + (user.full_name || user.email);
+      } catch (e) {
+        // if unauthorized, redirect
+        logout();
+      }
+      // fetch results
+      try {
+        const results = await api('/me/results');
+        const container = document.getElementById('results-container');
+        if (!results || results.length === 0) {
+          container.textContent = t('no_results');
+        } else {
+          const table = document.createElement('table');
+          const thead = document.createElement('thead');
+          thead.innerHTML = `<tr><th>${t('test_code')}</th><th>${t('four_letters')}</th><th>${t('date')}</th></tr>`;
+          table.appendChild(thead);
+          const tbody = document.createElement('tbody');
+          results.forEach(res => {
+            const tr = document.createElement('tr');
+            const date = new Date(res.created_at);
+            tr.innerHTML = `<td>${res.test_code}</td><td>${res.type4}</td><td>${date.toLocaleString()}</td>`;
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          container.appendChild(table);
+        }
+      } catch (e) {
+        document.getElementById('results-container').textContent = 'Error loading results.';
+      }
+      document.getElementById('logout-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+      });
+    });
+  </script>
+</body>
+</html>

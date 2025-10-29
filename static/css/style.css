@@ -1,0 +1,180 @@
+/*
+ * Basic styling for URP personality test web app.
+ *
+ * Uses a clean, modern layout with responsive containers and simple controls.
+ * Colors and spacing are defined via CSS custom properties so they can be
+ * customised easily.
+ */
+
+:root {
+  --primary: #007bff;
+  --primary-hover: #0056b3;
+  --background: #f9f9f9;
+  --text: #212529;
+  --muted: #6c757d;
+  --border: #dee2e6;
+  --card-bg: #fff;
+  --card-border: #e5e5e5;
+  --input-bg: #fff;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  background-color: var(--background);
+  color: var(--text);
+}
+
+header, nav, footer {
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem;
+}
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+nav a {
+  text-decoration: none;
+  color: var(--primary);
+  margin-right: 1rem;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 1rem;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  color: #fff;
+  background-color: var(--primary);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+
+.btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-sizing: border-box;
+  background: var(--input-bg);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th, table td {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+table th {
+  background-color: #f2f2f2;
+}
+
+.language-toggle {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--primary);
+  margin-left: 0.5rem;
+}
+
+.slider-row {
+  margin-bottom: 1rem;
+}
+
+.slider-row input[type=range] {
+  width: 100%;
+}
+
+.radio-group {
+  margin-bottom: 0.5rem;
+}
+
+.radio-group label {
+  margin-right: 1rem;
+}
+
+.result-box {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #f8f9fa;
+  margin-top: 1rem;
+}
+
+/* Score table styling for result display */
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+.score-table th,
+.score-table td {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.score-table th {
+  background-color: #f2f2f2;
+}
+
+.alert {
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.alert-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.alert-success {
+  color: #155724;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}

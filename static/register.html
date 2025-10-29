@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="register">Register</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <nav>
+    <div><a href="/static/index.html" class="brand">URP</a></div>
+    <div>
+      <a href="/static/login.html" data-i18n="login"></a>
+      <span class="language-toggle" onclick="toggleLang()" data-i18n="language"></span>
+    </div>
+  </nav>
+  <main class="container">
+    <div class="card">
+      <h2 data-i18n="register"></h2>
+      <div id="alert" class="alert" style="display:none;"></div>
+      <form id="register-form">
+        <div class="form-group">
+          <label for="full_name" data-i18n="full_name"></label>
+          <input type="text" id="full_name" name="full_name" required>
+        </div>
+        <div class="form-group">
+          <label for="email" data-i18n="email"></label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password" data-i18n="password"></label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+          <label for="password2" data-i18n="confirm_password"></label>
+          <input type="password" id="password2" name="password2" required>
+        </div>
+        <div class="form-group">
+          <input type="submit" class="btn" value="" data-i18n="register">
+        </div>
+      </form>
+    </div>
+  </main>
+  <script src="/static/js/app.js"></script>
+  <script>
+    document.getElementById('register-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const full_name = document.getElementById('full_name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const password2 = document.getElementById('password2').value;
+      const alertEl = document.getElementById('alert');
+      alertEl.style.display = 'none';
+      if (password !== password2) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = 'Passwords do not match';
+        alertEl.style.display = 'block';
+        return;
+      }
+      try {
+        await api('/register', {
+          method: 'POST',
+          body: { email, password, full_name }
+        });
+        alertEl.className = 'alert alert-success';
+        alertEl.textContent = t('registration_success');
+        alertEl.style.display = 'block';
+        // redirect after slight delay
+        setTimeout(() => { window.location.href = '/static/login.html'; }, 1500);
+      } catch (err) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = t('registration_error');
+        alertEl.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
